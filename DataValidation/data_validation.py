@@ -1,8 +1,10 @@
+import glob
 import json
 import os
 import shutil
 
 import pandas
+import pandas as pd
 
 
 class DataValidation:
@@ -41,8 +43,7 @@ class DataValidation:
         try:
             for file in os.listdir("Good_Raw_File"):
                 df = pandas.read_csv(os.path.join("Good_Raw_File",file))
-                print(df.shape[1])
-                print("\n")
+
                 if df.shape[1] == column_length:
                     # file stays in good files
                     pass
@@ -68,4 +69,53 @@ class DataValidation:
         except Exception as e:
             raise e
 
+    def check_missing_columns(self):
 
+        try:
+            for file in os.listdir("Good_Raw_File"):
+                df = pd.read_csv(os.path.join("Good_Raw_File",file))
+                flag = True
+                for columns in df:
+                    if len(df[columns]) - df[columns].count() == len(df[columns]):
+                        flag = False
+                        shutil.move(os.path.join("Good_Raw_File",file),os.path.join("Bad_Raw_File"))
+                        break
+                if flag:
+                    df.rename(columns={'default payment next month':'Target'}, inplace=True)
+                    df.to_csv(os.path.join("Good_Raw_File",file))
+
+        except Exception as e:
+            raise e
+
+
+    def putNull(self):
+
+        try:
+            for file in os.listdir("Good_Raw_File"):
+                df = pd.read_csv(os.path.join("Good_Raw_File",file))
+                df.fillna("Null",inplace=True)
+                df.to_csv(os.path.join("Good_Raw_File",file))
+
+        except Exception as e:
+            raise e
+
+    def merge_files(self):
+        try:
+            files = os.path.join("Good_Raw_File", "*.csv")
+
+            files = glob.glob(files)
+
+            df = pd.concat(map(pd.read_csv, files), ignore_index=True)
+            df.iloc[:, 1:].to_csv("Training_Data.csv")
+        except Exception as e:
+            raise e
+
+    def delete_raw_files(self):
+
+        dir = 'Good_Raw_File'
+        for f in os.listdir(dir):
+            os.remove(os.path.join(dir, f))
+
+        dir = 'Bad_Raw_File'
+        for f in os.listdir(dir):
+            os.remove(os.path.join(dir, f))
